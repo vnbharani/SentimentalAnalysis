@@ -1,0 +1,117 @@
+<html>
+  <head>
+    <title>Sentimental Analysis</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript"  src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="style.css"/>
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"/>
+    <link href="https://afeld.github.io/emoji-css/emoji.css" rel="stylesheet">
+    <script type="text/javascript">
+  $(document).ready(function(){
+        var data1;
+        $("button").click(function(){
+            $.get("http://127.0.0.1:5000/sentimentanalysis/api/v1.0/get/"+$("#query").val(), {
+            }).done(function(data,status){
+              var table = $("<table/>");
+              resultData = JSON.parse(data);
+              tweets = resultData.tweets;
+              mostFreqWords = resultData.frequency;
+              console.log(mostFreqWords);
+              console.log(tweets);
+              $.each(JSON.parse(tweets), function(idx,object){
+                  var row = $("<tr/>");
+                  if(object.sentiment == "This is a postive Tweet"){
+                    row.append("<td><i class=\"em em-grinning\"></i></td>");
+                  }
+                  else{
+                    row.append("<td><i class=\"em em-frowning\"></i></td>");
+                  }
+
+                  row.append($("<td/>").text(object.value));
+                  table.append(row);
+              });
+              $("#response").html(table);
+
+      // Load the Visualization API and the corechart package.
+      google.charts.load('current', {'packages':['corechart']});
+
+      // Set a callback to run when the Google Visualization API is loaded.
+      google.charts.setOnLoadCallback(drawPolarityChart);
+       google.charts.setOnLoadCallback(drawFreqChart );
+
+      // Callback that creates and populates a data table,
+      // instantiates the pie chart, passes in the data and
+      // draws it.
+      function drawPolarityChart() {
+
+        // Create the data table.
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Polarity');
+        data.addColumn('number', 'Tweet');
+        data.addRows([
+            ["Positive", resultData.positiveTweetCount],
+            ["Negative",resultData.negativeTweetCount]
+          ]
+
+        );
+
+        // Set chart options
+        var options = {'title':'Polarity',
+                       'width':400,
+                       'height':300};
+
+        // Instantiate and draw our chart, passing in some options.
+        var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+
+      }
+        function drawFreqChart() {
+          var freqData = new google.visualization.DataTable();
+
+        freqData.addColumn('string', 'Word');
+        freqData.addColumn('number', 'Count');
+        rows = [];
+        m = JSON.parse(mostFreqWords);
+        console.log(m);
+        $.each(JSON.parse(mostFreqWords),function(idx,object){
+
+              rows.push([object.word,object.count])
+            });
+        freqData.addRows(rows);
+         var freqOptions ={'title':'Frequency',
+                       'width':400,
+                       'height':300,
+                        legend:'none'};
+        var fchart = new google.visualization.BarChart(document.getElementById('freq_div'));
+        fchart.draw(freqData, freqOptions);
+
+        }
+
+
+    });
+          });
+      });
+
+    </script>
+  </head>
+
+  <body>
+<br/>
+<br/>
+<h1>Sentimental Analysis</h1>
+<div id = "search">
+<input type="text" id ="query" />
+<button id="ajax">Search</button>
+</div>
+
+<div id = "charts">
+<table>
+<tr>
+    <td><div id="chart_div"></div></td>
+    <td><div id="freq_div"></div></td>
+</tr>
+</table>
+</div>
+<div id ="response"></div>
+  </body>
+</html>
